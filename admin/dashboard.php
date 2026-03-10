@@ -71,7 +71,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
         <div style="margin-top: 20px;">
             <a href="manage_menu.php" class="btn btn-green">จัดการเมนู</a>
-            <a href="../index.php" class="btn btn-brown">ดูหน้าร้าน</a>
+            <a href="../index1.php" class="btn btn-brown">ดูหน้าร้าน</a>
         </div>
     </div>
 </body>
