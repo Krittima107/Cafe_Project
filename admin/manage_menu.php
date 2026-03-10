@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db_connect.php';
 
+// ป้องกันคนไม่ได้ล็อกอิน หรือไม่ใช่ admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
@@ -9,17 +10,45 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 $msg = '';
 
-// --- ส่วนจัดการเมื่อมีการกดปุ่ม "เพิ่มเมนู" ---
+// ==========================================
+// 1. ระบบลบข้อมูล (Delete) - ทำงานเมื่อกดปุ่มลบ
+// ==========================================
+if (isset($_GET['delete_id'])) {
+    $delete_id = $_GET['delete_id'];
+
+    // ดึงชื่อไฟล์รูปภาพออกมาก่อนเพื่อที่จะตามไปลบไฟล์ในโฟลเดอร์
+    $stmt_img = $conn->prepare("SELECT image_name FROM menus WHERE id = :id");
+    $stmt_img->bindParam(':id', $delete_id);
+    $stmt_img->execute();
+    $img_row = $stmt_img->fetch(PDO::FETCH_ASSOC);
+
+    // ถ้ามีรูป ให้ลบไฟล์รูปออกจากโฟลเดอร์ด้วย
+    if ($img_row && !empty($img_row['image_name'])) {
+        $file_path = "../uploads/menus/" . $img_row['image_name'];
+        if (file_exists($file_path)) {
+            unlink($file_path); 
+        }
+    }
+
+    // ลบข้อมูลออกจากฐานข้อมูล
+    $stmt_del = $conn->prepare("DELETE FROM menus WHERE id = :id");
+    $stmt_del->bindParam(':id', $delete_id);
+    if ($stmt_del->execute()) {
+        $msg = "<div style='color:green; padding: 10px; background: #e8f5e9; border-radius: 4px; margin-bottom: 15px;'>🗑️ ลบเมนูและรูปภาพเรียบร้อยแล้ว!</div>";
+    }
+}
+
+// ==========================================
+// 2. ระบบเพิ่มข้อมูล (Create) - ทำงานเมื่อกดปุ่มบันทึก
+// ==========================================
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_menu'])) {
     $name = $_POST['name'];
     $category_id = $_POST['category_id'];
     $price = $_POST['price'];
     
     // จัดการ Checkbox ร้อน/เย็น/ปั่น
-    // ถ้ามีการติ๊กเลือก จะเอาคำมาต่อกันด้วยลูกน้ำ เช่น "ร้อน, เย็น" แต่ถ้าไม่เลือกเลยจะใส่ "-"
     $serve_type = isset($_POST['serve_type']) ? implode(", ", $_POST['serve_type']) : '-'; 
-    $description = $serve_type; // เอาไปเก็บในคอลัมน์ description เดิม
-
+    $description = $serve_type; 
     $is_available = isset($_POST['is_available']) ? 1 : 0;
     
     // ระบบจัดการอัปโหลดรูปภาพ
@@ -34,7 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_menu'])) {
         if (in_array($fileType, $allowedTypes) && $fileSize <= 2 * 1024 * 1024) {
             $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
             $newFileName = "menu_" . uniqid() . "." . $fileExtension;
-            $destPath = "../uploads/menus/" . $newFileName;
+            
+            // เช็คและสร้างโฟลเดอร์อัตโนมัติ
+            $upload_dir = "../uploads/menus/";
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true); 
+            }
+
+            $destPath = $upload_dir . $newFileName;
             
             if (move_uploaded_file($fileTmpPath, $destPath)) {
                 $image_name = $newFileName;
@@ -55,19 +91,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_menu'])) {
             $stmt->execute([
                 ':category_id' => $category_id,
                 ':name' => $name,
-                ':description' => $description, // ตอนนี้มันคือ ร้อน, เย็น, ปั่น
+                ':description' => $description,
                 ':price' => $price,
                 ':image_name' => $image_name,
                 ':is_available' => $is_available
             ]);
-            $msg = "<div style='color:green;'>✅ เพิ่มเมนูสำเร็จ!</div>";
+            $msg = "<div style='color:green; padding: 10px; background: #e8f5e9; border-radius: 4px; margin-bottom: 15px;'>✅ เพิ่มเมนูสำเร็จ!</div>";
         } catch(PDOException $e) {
             $msg = "<div style='color:red;'>Error: " . $e->getMessage() . "</div>";
         }
     }
 }
 
-// --- ส่วนดึงข้อมูลเพื่อมาแสดงผล ---
+// ==========================================
+// 3. ระบบดึงข้อมูลมาแสดง (Read)
+// ==========================================
 $cat_stmt = $conn->query("SELECT * FROM categories");
 $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -181,8 +219,9 @@ $menus = $menu_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?php echo number_format($menu['price'], 2); ?> ฿</td>
                     <td><?php echo $menu['is_available'] ? '<span style="color:green;">พร้อมขาย</span>' : '<span style="color:red;">หมด</span>'; ?></td>
                     <td>
-                        <a href="#" class="btn btn-brown" style="padding: 4px 8px; font-size: 14px;">แก้ไข</a>
-                        <a href="#" class="btn" style="background: red; padding: 4px 8px; font-size: 14px;">ลบ</a>
+                        <a href="edit_menu.php?id=<?php echo $menu['id']; ?>" class="btn btn-brown" style="padding: 4px 8px; font-size: 14px;">แก้ไข</a>
+                        
+                        <a href="manage_menu.php?delete_id=<?php echo $menu['id']; ?>" class="btn" style="background: red; padding: 4px 8px; font-size: 14px;" onclick="return confirm('แน่ใจหรือไม่ว่าต้องการลบเมนูนี้?');">ลบ</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
