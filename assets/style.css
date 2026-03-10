@@ -1,0 +1,13 @@
+:root {
+    --color-brown-light: #A9907E;
+    --color-cream: #F3DEBA;
+    --color-green: #ABC4AA;
+    --color-brown-dark: #675D50;
+}
+
+body {
+    background-color: var(--color-cream);
+    color: var(--color-brown-dark);
+    font-family: 'Prompt', sans-serif;
+    /* แนะนำให้ใช้ฟอนต์ Prompt เพื่อให้อ่านง่าย */
+}
