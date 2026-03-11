@@ -2,36 +2,24 @@
 session_start();
 require_once '../config/db_connect.php';
 
-// ป้องกันคนไม่ได้ล็อกอิน หรือไม่ใช่ admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index1.php");
     exit;
 }
-// ดึงข้อมูลรูปโปรไฟล์ของผู้ใช้ที่ล็อกอินอยู่
-// โค้ดใหม่: เพิ่ม username เข้าไปในคำสั่ง SELECT
-$user_stmt = $conn->prepare("SELECT username, profile_image FROM userscafe WHERE id = :id");
+
+$user_stmt = $conn->prepare("SELECT username, profile_image, role FROM userscafe WHERE id = :id");
 $user_stmt->execute([':id' => $_SESSION['user_id']]);
 $current_user = $user_stmt->fetch(PDO::FETCH_ASSOC);
-// ==========================================
-// ส่วนดึงข้อมูลตัวชี้วัด (Metrics) จากฐานข้อมูล
-// ==========================================
+$is_admin = true; // บอก Navbar ว่าเราเป็นแอดมิน
 
-// 1. จำนวนเมนูทั้งหมด
 $stmt1 = $conn->query("SELECT COUNT(*) FROM menus");
 $total_menus = $stmt1->fetchColumn();
-
-// 2. จำนวนหมวดหมู่
 $stmt2 = $conn->query("SELECT COUNT(*) FROM categories");
 $total_categories = $stmt2->fetchColumn();
-
-// 3. จำนวนผู้ใช้งานในระบบ (ดึงจากตาราง userscafe)
 $stmt3 = $conn->query("SELECT COUNT(*) FROM userscafe");
 $total_users = $stmt3->fetchColumn();
-
-// 4. (แถม) เมนูที่สถานะ "หมด" (is_available = 0)
 $stmt4 = $conn->query("SELECT COUNT(*) FROM menus WHERE is_available = 0");
 $out_of_stock = $stmt4->fetchColumn();
-
 ?>
 
 <!DOCTYPE html>
@@ -42,21 +30,33 @@ $out_of_stock = $stmt4->fetchColumn();
     <title>Dashboard | Admin</title>
     <link rel="stylesheet" href="../assets/style.css">
     <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--color-cream);
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .main-content {
+            flex: 1;
+            padding-bottom: 40px;
+        }
+
         .container {
             max-width: 1000px;
-            margin: 20px auto;
-            padding: 20px;
+            margin: 40px auto;
+            padding: 30px;
             background: white;
             border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             border-bottom: 2px solid var(--color-cream);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
 
         .btn {
@@ -65,6 +65,11 @@ $out_of_stock = $stmt4->fetchColumn();
             border-radius: 4px;
             color: white;
             display: inline-block;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
         }
 
         .btn-green {
@@ -75,11 +80,6 @@ $out_of_stock = $stmt4->fetchColumn();
             background-color: var(--color-brown-light);
         }
 
-        .btn-red {
-            background-color: #d9534f;
-        }
-
-        /* สไตล์สำหรับกล่อง Dashboard */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -111,59 +111,51 @@ $out_of_stock = $stmt4->fetchColumn();
 </head>
 
 <body>
-    <div class="container">
-<div class="header">
-            <h2>⚙️ ระบบจัดการร้าน (Dashboard)</h2>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="display: flex; align-items: center; gap: 10px; background: var(--color-cream); padding: 5px 15px; border-radius: 30px; border: 1px solid var(--color-brown-light);">
-                    <?php if(!empty($current_user['profile_image'])): ?>
-                        <img src="../uploads/profiles/<?php echo $current_user['profile_image']; ?>" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
-                    <?php else: ?>
-                        <div style="width: 35px; height: 35px; border-radius: 50%; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
-                    <?php endif; ?>
-                    
-                    <div style="line-height: 1.2;">
-                        <div style="font-weight: bold; color: var(--color-brown-dark);"><?php echo htmlspecialchars($current_user['username']); ?></div>
-                        <div style="font-size: 12px; color: #4CAF50; display: flex; align-items: center; gap: 4px;">
-                            <span style="display: inline-block; width: 8px; height: 8px; background-color: #4CAF50; border-radius: 50%; box-shadow: 0 0 4px #4CAF50;"></span> กำลังใช้งาน
-                        </div>
-                    </div>
+
+    <?php
+    $in_admin = true;
+    include '../navbar.php';
+    ?>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h2 style="margin: 0; color: var(--color-brown-dark);">⚙️ ระบบจัดการร้าน (Dashboard)</h2>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <h3>รายการเมนูทั้งหมด</h3>
+                    <div class="number"><?php echo $total_menus; ?></div>
+                    <span style="font-size: 14px;">รายการ</span>
                 </div>
+                <div class="stat-card" style="background-color: #e8f5e9; border-color: var(--color-green);">
+                    <h3>หมวดหมู่สินค้า</h3>
+                    <div class="number"><?php echo $total_categories; ?></div>
+                    <span style="font-size: 14px;">หมวดหมู่</span>
+                </div>
+                <div class="stat-card" style="background-color: #fff3e0; border-color: orange;">
+                    <h3>เมนูที่สินค้าหมด</h3>
+                    <div class="number" style="color: orange;"><?php echo $out_of_stock; ?></div>
+                    <span style="font-size: 14px;">รายการ</span>
+                </div>
+                <div class="stat-card" style="background-color: #f3e5f5; border-color: purple;">
+                    <h3>ผู้ใช้งานในระบบ</h3>
+                    <div class="number" style="color: purple;"><?php echo $total_users; ?></div>
+                    <span style="font-size: 14px;">บัญชี</span>
+                </div>
+            </div>
 
-                <a href="edit_profile.php" class="btn btn-brown" style="padding: 6px 12px; font-size: 14px;">✏️ แก้ไขโปรไฟล์</a>
-                <a href="../logout.php" class="btn btn-red" style="padding: 6px 12px; font-size: 14px;">ออกจากระบบ</a>
+            <div style="margin-top: 20px; border-top: 2px solid var(--color-cream); padding-top: 20px;">
+                <h3>เครื่องมือจัดการ</h3>
+                <a href="manage_menu.php" class="btn btn-green">☕ จัดการเมนู (เพิ่ม/ลบ/แก้ไข)</a>
+                <a href="../index1.php" class="btn btn-brown">🏠 ดูหน้าร้าน (Frontend)</a>
             </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <h3>รายการเมนูทั้งหมด</h3>
-                <div class="number"><?php echo $total_menus; ?></div>
-                <span style="font-size: 14px;">รายการ</span>
-            </div>
-            <div class="stat-card" style="background-color: #e8f5e9; border-color: var(--color-green);">
-                <h3>หมวดหมู่สินค้า</h3>
-                <div class="number"><?php echo $total_categories; ?></div>
-                <span style="font-size: 14px;">หมวดหมู่</span>
-            </div>
-            <div class="stat-card" style="background-color: #fff3e0; border-color: orange;">
-                <h3>เมนูที่สินค้าหมด</h3>
-                <div class="number" style="color: orange;"><?php echo $out_of_stock; ?></div>
-                <span style="font-size: 14px;">รายการ</span>
-            </div>
-            <div class="stat-card" style="background-color: #f3e5f5; border-color: purple;">
-                <h3>ผู้ใช้งานในระบบ</h3>
-                <div class="number" style="color: purple;"><?php echo $total_users; ?></div>
-                <span style="font-size: 14px;">บัญชี</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 20px; border-top: 2px solid var(--color-cream); padding-top: 20px;">
-            <h3>เครื่องมือจัดการ</h3>
-            <a href="manage_menu.php" class="btn btn-green">☕ จัดการเมนู (เพิ่ม/ลบ/แก้ไข)</a>
-            <a href="../index1.php" class="btn btn-brown">🏠 ดูหน้าร้าน (Frontend)</a>
         </div>
     </div>
+
+    <?php include '../footer.php'; ?>
+
 </body>
 
 </html>

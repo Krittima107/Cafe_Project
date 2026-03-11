@@ -14,22 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // ตรวจสอบรหัสผ่าน
         if ($user && password_verify($password, $user['password'])) {
-
-            // --- ดักจับสิทธิ์: ถ้าไม่ใช่ user ให้ฟ้อง Error ---
             if ($user['role'] !== 'user') {
                 $error_msg = "บัญชีนี้เป็น Admin กรุณาไปเข้าสู่ระบบที่หน้า Admin ครับ!";
             } else {
-                // สร้าง Session สำหรับ User
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
-
                 header("Location: index1.php");
                 exit;
             }
-
         } else {
             $error_msg = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!";
         }
@@ -38,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="th">
 
@@ -49,10 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <style>
         body {
             display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--color-cream);
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            padding: 40px 20px;
         }
 
         .login-container {
@@ -67,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .login-container h2 {
             color: var(--color-green);
+            margin-top: 0;
         }
 
-        /* เปลี่ยนสีหัวข้อให้ดูเป็น User */
         .form-control {
             width: 100%;
             padding: 10px;
@@ -99,32 +101,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: red;
             margin-bottom: 15px;
         }
-
-        .back-link {
-            display: block;
-            margin-top: 15px;
-            color: var(--color-brown-dark);
-            text-decoration: none;
-        }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <h2>☕ เข้าสู่ระบบ User ☕</h2>
 
-        <?php if ($error_msg != ''): ?>
-            <div class="error"><?php echo $error_msg; ?></div>
-        <?php endif; ?>
+    <?php include 'navbar.php'; ?>
 
-        <form action="login_user.php" method="POST">
-            <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน" required>
-            <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
-            <button type="submit" class="btn-login">ล็อกอิน (User)</button>
-        </form>
-
-        <a href="index1.php" class="back-link">← กลับหน้าแรก</a>
+    <div class="main-content">
+        <div class="login-container">
+            <h2>☕ เข้าสู่ระบบ User ☕</h2>
+            <?php if ($error_msg != ''): ?>
+                <div class="error"><?php echo $error_msg; ?></div>
+            <?php endif; ?>
+            <form action="login_user.php" method="POST">
+                <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน" required>
+                <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
+                <button type="submit" class="btn-login">ล็อกอิน (User)</button>
+            </form>
+        </div>
     </div>
+
+    <?php include 'footer.php'; ?>
+
 </body>
 
 </html>

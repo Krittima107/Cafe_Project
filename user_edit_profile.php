@@ -2,7 +2,6 @@
 session_start();
 require_once 'config/db_connect.php';
 
-// ถ้าไม่ได้ล็อกอิน ให้เด้งไปหน้า login
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
@@ -11,12 +10,15 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $msg = '';
 
-// ดึงข้อมูลปัจจุบันของผู้ใช้
 $stmt = $conn->prepare("SELECT * FROM userscafe WHERE id = :id");
 $stmt->execute([':id' => $user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// เมื่อกดปุ่มอัปเดตโปรไฟล์
+// --- โค้ดเพิ่มใหม่: นำข้อมูลไปให้ Navbar ใช้งาน ---
+$current_user = $user;
+$is_admin = ($user['role'] === 'admin');
+// ---------------------------------------------
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
     $new_username = trim($_POST['username']);
     $new_password = $_POST['new_password'];
@@ -33,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
             $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
             $newFileName = "profile_" . $user_id . "_" . uniqid() . "." . $fileExtension;
 
-            // สังเกตว่าพาธตัด ../ ออก เพราะไฟล์นี้อยู่หน้าสุดแล้ว
             $upload_dir = "uploads/profiles/";
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
@@ -72,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
 
             $stmt->execute([':id' => $user_id]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $current_user = $user; // อัปเดต Navbar ทันที
 
         } catch (PDOException $e) {
             $msg = "<div style='color:red;'>ชื่อผู้ใช้นี้อาจมีคนใช้แล้ว หรือเกิดข้อผิดพลาด</div>";
@@ -88,9 +90,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
     <title>ตั้งค่าโปรไฟล์ | User</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
         .container {
             max-width: 600px;
-            margin: 40px auto;
+            width: 100%;
+            margin: 0 auto;
             padding: 30px;
             background: white;
             border-radius: 8px;
@@ -157,47 +175,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
 </head>
 
 <body style="background-color: var(--color-cream); font-family: 'Prompt', sans-serif;">
-    <div class="container">
-        <h2 style="text-align: center; color: var(--color-brown-dark);">⚙️ ตั้งค่าบัญชีผู้ใช้</h2>
-        <div style="text-align: center; margin-bottom: 20px; color: #666;">
-            <span class="status-dot"></span> กำลังออนไลน์
+
+    <?php include 'navbar.php'; ?>
+
+    <div class="main-content">
+        <div class="container">
+            <h2 style="text-align: center; color: var(--color-brown-dark);">⚙️ ตั้งค่าบัญชีผู้ใช้</h2>
+            <div style="text-align: center; margin-bottom: 20px; color: #666;">
+                <span class="status-dot"></span> กำลังออนไลน์
+            </div>
+
+            <?php echo $msg; ?>
+
+            <form action="user_edit_profile.php" method="POST" enctype="multipart/form-data">
+                <?php if (!empty($user['profile_image'])): ?>
+                    <img src="uploads/profiles/<?php echo $user['profile_image']; ?>" class="profile-pic-preview">
+                <?php else: ?>
+                    <div
+                        style="width: 120px; height: 120px; border-radius: 50%; background-color: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 40px;">
+                        👤</div>
+                <?php endif; ?>
+
+                <div class="form-group">
+                    <label>เปลี่ยนรูปโปรไฟล์ (JPG, PNG):</label>
+                    <input type="file" name="profile_image" class="form-control" accept="image/jpeg, image/png">
+                </div>
+
+                <div class="form-group">
+                    <label>ชื่อผู้ใช้งาน (Username):</label>
+                    <input type="text" name="username" class="form-control"
+                        value="<?php echo htmlspecialchars($user['username']); ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label>รหัสผ่านใหม่ <span
+                            style="font-weight: normal; font-size: 12px; color: #888;">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span>:</label>
+                    <input type="password" name="new_password" class="form-control" placeholder="กรอกรหัสผ่านใหม่...">
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button type="submit" name="update_profile" class="btn btn-green">💾 บันทึกการเปลี่ยนแปลง</button>
+                    <a href="index1.php" class="btn btn-brown" style="margin-left: 10px;">← กลับหน้าแรก</a>
+                </div>
+            </form>
         </div>
-
-        <?php echo $msg; ?>
-
-        <form action="user_edit_profile.php" method="POST" enctype="multipart/form-data">
-
-            <?php if (!empty($user['profile_image'])): ?>
-                <img src="uploads/profiles/<?php echo $user['profile_image']; ?>" class="profile-pic-preview">
-            <?php else: ?>
-                <div
-                    style="width: 120px; height: 120px; border-radius: 50%; background-color: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 40px;">
-                    👤</div>
-            <?php endif; ?>
-
-            <div class="form-group">
-                <label>เปลี่ยนรูปโปรไฟล์ (JPG, PNG):</label>
-                <input type="file" name="profile_image" class="form-control" accept="image/jpeg, image/png">
-            </div>
-
-            <div class="form-group">
-                <label>ชื่อผู้ใช้งาน (Username):</label>
-                <input type="text" name="username" class="form-control"
-                    value="<?php echo htmlspecialchars($user['username']); ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>รหัสผ่านใหม่ <span
-                        style="font-weight: normal; font-size: 12px; color: #888;">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span>:</label>
-                <input type="password" name="new_password" class="form-control" placeholder="กรอกรหัสผ่านใหม่...">
-            </div>
-
-            <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" name="update_profile" class="btn btn-green">💾 บันทึกการเปลี่ยนแปลง</button>
-                <a href="index1.php" class="btn btn-brown" style="margin-left: 10px;">← กลับหน้าแรก</a>
-            </div>
-        </form>
     </div>
+
+    <?php include 'footer.php'; ?>
+
 </body>
 
 </html>

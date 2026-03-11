@@ -47,12 +47,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>เข้าสู่ระบบ Admin | Cafe Menu</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
+        /* ปรับ Body ให้เรียงจากบนลงล่าง */
         body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--color-cream);
+            font-family: 'Prompt', sans-serif;
+        }
+
+        /* สร้างกล่องครอบตรงกลาง ให้ขยายเต็มพื้นที่ที่เหลือ */
+        .main-content {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            padding: 40px 20px;
         }
 
         .login-container {
@@ -67,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .login-container h2 {
             color: var(--color-brown-dark);
+            margin-top: 0;
         }
 
         .form-control {
@@ -88,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            transition: 0.3s;
         }
 
         .btn-login:hover {
@@ -109,21 +122,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 
 <body>
-    <div class="login-container">
-        <h2>🔒 เข้าสู่ระบบ Admin 🔒</h2>
 
-        <?php if ($error_msg != ''): ?>
-            <div class="error"><?php echo $error_msg; ?></div>
-        <?php endif; ?>
+    <?php include 'navbar.php'; ?>
 
-        <form action="login_admin.php" method="POST">
-            <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน" required>
-            <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
-            <button type="submit" class="btn-login">ล็อกอิน (Admin)</button>
-        </form>
+    <div class="main-content">
+        <div class="login-container">
+            <h2>🔒 เข้าสู่ระบบ Admin 🔒</h2>
 
-        <a href="index1.php" class="back-link">← กลับหน้าแรก</a>
+            <?php if ($error_msg != ''): ?>
+                <div class="error"><?php echo $error_msg; ?></div>
+            <?php endif; ?>
+
+            <form action="login_admin.php" method="POST">
+                <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน" required>
+                <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
+                <button type="submit" class="btn-login">ล็อกอิน (Admin)</button>
+            </form>
+
+            <a href="index1.php" class="back-link">← กลับหน้าแรก</a>
+        </div>
     </div>
+
+    <?php include 'footer.php'; ?>
+
 </body>
 
 </html>
