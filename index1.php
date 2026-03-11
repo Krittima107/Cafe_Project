@@ -19,13 +19,14 @@ if (isset($_SESSION['user_id'])) {
 // --- รับค่าการค้นหา หมวดหมู่ และรูปแบบการเสิร์ฟ ---
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $filter_cat = isset($_GET['category']) ? $_GET['category'] : '';
-$filter_serve = isset($_GET['serve']) ? $_GET['serve'] : ''; // เพิ่มตัวรับค่า ร้อน/เย็น/ปั่น
+$filter_serve = isset($_GET['serve']) ? $_GET['serve'] : '';
 
 // --- สร้าง Query สำหรับดึงเมนู ---
+// แก้ไข: เปลี่ยนจาก WHERE m.is_available = 1 เป็น WHERE 1=1 เพื่อดึงสินค้าทั้งหมด (รวมสินค้าหมดด้วย)
 $sql = "SELECT m.*, c.name as category_name 
         FROM menus m 
         LEFT JOIN categories c ON m.category_id = c.id 
-        WHERE m.is_available = 1"; 
+        WHERE 1=1"; 
 $params = [];
 
 if ($search !== '') {
@@ -36,7 +37,6 @@ if ($filter_cat !== '') {
     $sql .= " AND m.category_id = :category";
     $params[':category'] = $filter_cat;
 }
-// เพิ่มเงื่อนไขการกรอง ร้อน/เย็น/ปั่น
 if ($filter_serve !== '') {
     $sql .= " AND m.description LIKE :serve";
     $params[':serve'] = "%$filter_serve%";
@@ -47,12 +47,11 @@ $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// --- ดึงหมวดหมู่มาทำปุ่มตัวกรอง ---
 $cat_stmt = $conn->query("SELECT * FROM categories");
 $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// --- ดึงเมนูแนะนำ 3 อันดับแรก ---
-$rec_stmt = $conn->query("SELECT * FROM menus WHERE is_available = 1 ORDER BY views DESC LIMIT 3");
+// แก้ไข: ดึงเมนูแนะนำโดยไม่ตัดสินค้าหมดออก
+$rec_stmt = $conn->query("SELECT * FROM menus ORDER BY views DESC LIMIT 3");
 $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -71,27 +70,52 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
         .navbar a:hover { opacity: 0.9; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         
-        /* ส่วนค้นหา */
         .search-bar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .search-input { padding: 10px; width: 250px; border: 1px solid var(--color-brown-light); border-radius: 4px; }
         .btn-search { padding: 10px 20px; background-color: var(--color-green); color: white; border: none; border-radius: 4px; cursor: pointer; }
         
-        /* ปุ่มหมวดหมู่ */
         .category-tags { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
         .cat-tag { padding: 8px 15px; background-color: white; border: 1px solid var(--color-brown-light); color: var(--color-brown-dark); text-decoration: none; border-radius: 20px; transition: 0.3s; }
         .cat-tag:hover, .cat-tag.active { background-color: var(--color-brown-light); color: white; }
         .tag-divider { color: #ccc; margin: 0 5px; }
 
-        /* Grid แสดงเมนู */
         .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .menu-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: transform 0.2s; text-decoration: none; color: inherit; display: block; }
         .menu-card:hover { transform: translateY(-5px); }
-        .menu-img { width: 100%; height: 200px; object-fit: cover; background-color: var(--color-cream); }
+        .img-container { position: relative; } /* เพิ่มมาเพื่อควบคุมป้าย Sold Out */
+        .menu-img { width: 100%; height: 200px; object-fit: cover; background-color: var(--color-cream); transition: 0.3s; }
         .menu-info { padding: 15px; }
         .menu-title { margin: 0 0 10px 0; font-size: 18px; color: var(--color-brown-dark); }
         .menu-price { font-weight: bold; color: var(--color-green); font-size: 18px; }
         .menu-serve { font-size: 12px; background: var(--color-cream); padding: 3px 8px; border-radius: 10px; color: var(--color-brown-dark); }
         .section-title { border-left: 4px solid var(--color-brown-light); padding-left: 10px; margin-top: 30px; }
+
+        /* ====== เอฟเฟกต์สำหรับสินค้าหมด (Sold Out) ====== */
+        .menu-card.out-of-stock {
+            opacity: 0.75;
+            cursor: default;
+        }
+        .menu-card.out-of-stock:hover {
+            transform: none; /* ไม่ให้การ์ดเด้งเวลาเอาเมาส์ชี้ */
+        }
+        .menu-card.out-of-stock .menu-img {
+            filter: grayscale(100%); /* เปลี่ยนรูปเป็นขาวดำ */
+        }
+        .sold-out-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 8px 18px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 2px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
     </style>
 </head>
 
@@ -165,17 +189,26 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2 class="section-title">⭐ เมนูแนะนำยอดฮิต</h2>
             <div class="menu-grid" style="margin-bottom: 40px;">
                 <?php foreach ($recommended_menus as $menu): ?>
-                    <a href="menu_detail.php?id=<?php echo $menu['id']; ?>" class="menu-card" style="border: 2px solid gold;">
-                        <?php if ($menu['image_name']): ?>
-                            <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
-                        <?php else: ?>
-                            <div class="menu-img" style="display:flex; align-items:center; justify-content:center; color:#999;">
-                                ไม่มีรูปภาพ</div>
-                        <?php endif; ?>
+                    <a href="<?php echo $menu['is_available'] ? 'menu_detail.php?id='.$menu['id'] : 'javascript:void(0);'; ?>" 
+                       class="menu-card <?php echo !$menu['is_available'] ? 'out-of-stock' : ''; ?>" style="border: 2px solid gold;">
+                        
+                        <div class="img-container">
+                            <?php if(!$menu['is_available']): ?>
+                                <div class="sold-out-badge">สินค้าหมด</div>
+                            <?php endif; ?>
+
+                            <?php if ($menu['image_name']): ?>
+                                <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
+                            <?php else: ?>
+                                <div class="menu-img" style="display:flex; align-items:center; justify-content:center; color:#999;">
+                                    ไม่มีรูปภาพ</div>
+                            <?php endif; ?>
+                        </div>
+
                         <div class="menu-info">
                             <h3 class="menu-title"><?php echo $menu['name']; ?></h3>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="menu-price"><?php echo number_format($menu['price'], 2); ?> ฿</span>
+                                <span class="menu-price" style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>"><?php echo number_format($menu['price'], 2); ?> ฿</span>
                                 <span class="menu-serve">👁️ <?php echo $menu['views']; ?> วิว</span>
                             </div>
                         </div>
@@ -187,20 +220,29 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
         <h2 class="section-title">เมนูเครื่องดื่มและเบเกอรี่</h2>
         <div class="menu-grid">
             <?php foreach ($menus as $menu): ?>
-                <a href="menu_detail.php?id=<?php echo $menu['id']; ?>" class="menu-card">
-                    <?php if ($menu['image_name']): ?>
-                        <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
-                    <?php else: ?>
-                        <div class="menu-img" style="display:flex; align-items:center; justify-content:center; color:#999;">
-                            ไม่มีรูปภาพ</div>
-                    <?php endif; ?>
+                <a href="<?php echo $menu['is_available'] ? 'menu_detail.php?id='.$menu['id'] : 'javascript:void(0);'; ?>" 
+                   class="menu-card <?php echo !$menu['is_available'] ? 'out-of-stock' : ''; ?>">
+                    
+                    <div class="img-container">
+                        <?php if(!$menu['is_available']): ?>
+                            <div class="sold-out-badge">สินค้าหมด</div>
+                        <?php endif; ?>
+
+                        <?php if ($menu['image_name']): ?>
+                            <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
+                        <?php else: ?>
+                            <div class="menu-img" style="display:flex; align-items:center; justify-content:center; color:#999;">
+                                ไม่มีรูปภาพ</div>
+                        <?php endif; ?>
+                    </div>
+
                     <div class="menu-info">
                         <h3 class="menu-title"><?php echo $menu['name']; ?></h3>
                         <div style="margin-bottom: 10px;">
                             <span class="menu-serve"><?php echo $menu['description']; ?></span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="menu-price"><?php echo number_format($menu['price'], 2); ?> ฿</span>
+                            <span class="menu-price" style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>"><?php echo number_format($menu['price'], 2); ?> ฿</span>
                             <span style="font-size: 12px; color: #888;"><?php echo $menu['category_name']; ?></span>
                         </div>
                     </div>
