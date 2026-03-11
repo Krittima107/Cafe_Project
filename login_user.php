@@ -48,18 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-family: 'Prompt', sans-serif;
         }
 
-        /* สร้างพื้นหลังสีเต็มจอแบบ Shopee */
+        /* พื้นหลังสีครีมเหลือง */
         .login-wrapper {
             flex: 1;
-            background-color: var(--color-brown-light);
-            /* สีธีมคาเฟ่ */
+            background-color: #f5e6c8;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 40px 20px;
         }
 
-        /* กล่องครอบเลย์เอาต์ซ้าย-ขวา */
         .login-split-container {
             display: flex;
             max-width: 1000px;
@@ -68,15 +66,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             justify-content: space-between;
             gap: 40px;
             flex-wrap: wrap;
-            /* ถ้าจอมือถือจะปัดลงมาเรียงแนวตั้ง */
         }
 
-        /* ส่วนแบรนด์ (โลโก้ซ้ายมือ) */
+        /* ปรับสีฟอนต์เป็นน้ำตาลอ่อน */
         .login-brand {
             flex: 1;
             min-width: 300px;
             text-align: center;
-            color: white;
+            color: #8d6e63;
         }
 
         .login-brand img {
@@ -84,34 +81,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             height: 250px;
             object-fit: contain;
             background-color: white;
-            /* พื้นหลังขาววงกลมให้โลโก้เด่น */
             border-radius: 50%;
             padding: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             margin-bottom: 25px;
         }
 
         .login-brand h1 {
             margin: 0;
             font-size: 36px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            text-shadow: none;
         }
 
         .login-brand p {
             font-size: 18px;
             margin-top: 10px;
-            opacity: 0.9;
+            opacity: 1;
         }
 
-        /* ส่วนกล่องล็อกอิน (ขวามือ) */
         .login-box {
             flex: 0 0 400px;
-            /* ล็อกขนาดกล่องขวา */
             max-width: 100%;
             background: white;
             padding: 40px 30px;
             border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
         }
 
@@ -206,25 +200,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 
 <body>
-
     <?php include 'navbar.php'; ?>
-
     <div class="login-wrapper">
         <div class="login-split-container">
-
             <div class="login-brand">
                 <img src="assets/logo.png" alt="Moom Marm Cafe">
                 <h1>Moom Marm Cafe</h1>
                 <p>มุมโปรดของคนรักกาแฟและเบเกอรี่</p>
             </div>
-
             <div class="login-box">
                 <h2>เข้าสู่ระบบ</h2>
-
                 <?php if ($error_msg != ''): ?>
                     <div class="error"><?php echo $error_msg; ?></div>
                 <?php endif; ?>
-
                 <form action="login_user.php" method="POST">
                     <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน (Username)"
                         required>
@@ -232,16 +220,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         required>
                     <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
                 </form>
-
                 <div class="divider">หรือ</div>
                 <a href="index1.php" class="back-link">กลับไปเลือกดูเมนูหน้าร้าน</a>
             </div>
-
         </div>
     </div>
-
     <?php include 'footer.php'; ?>
-
 </body>
 
 </html>

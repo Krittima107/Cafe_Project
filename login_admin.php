@@ -48,9 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-family: 'Prompt', sans-serif;
         }
 
+        /* พื้นหลังสีครีมเหลือง */
         .login-wrapper {
             flex: 1;
-            background-color: var(--color-brown-light);
+            background-color: #f5e6c8;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -67,11 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             flex-wrap: wrap;
         }
 
+        /* ปรับสีฟอนต์เป็นน้ำตาลอ่อน */
         .login-brand {
             flex: 1;
             min-width: 300px;
             text-align: center;
-            color: white;
+            color: #8d6e63;
         }
 
         .login-brand img {
@@ -81,20 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: white;
             border-radius: 50%;
             padding: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             margin-bottom: 25px;
         }
 
         .login-brand h1 {
             margin: 0;
             font-size: 36px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            text-shadow: none;
         }
 
         .login-brand p {
             font-size: 18px;
             margin-top: 10px;
-            opacity: 0.9;
+            opacity: 1;
         }
 
         .login-box {
@@ -103,11 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: white;
             padding: 40px 30px;
             border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
         }
 
-        /* เปลี่ยนสีหัวข้อสำหรับแอดมินเป็นสีน้ำตาลเข้ม */
         .login-box h2 {
             color: var(--color-brown-dark);
             margin-top: 0;
@@ -131,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-color: var(--color-brown-dark);
         }
 
-        /* เปลี่ยนสีปุ่มสำหรับแอดมินเป็นสีน้ำตาลเข้ม */
         .btn-login {
             width: 100%;
             padding: 12px;
@@ -200,40 +200,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 
 <body>
-
     <?php include 'navbar.php'; ?>
-
     <div class="login-wrapper">
         <div class="login-split-container">
-
             <div class="login-brand">
                 <img src="assets/logo.png" alt="Moom Marm Cafe Admin">
                 <h1>Moom Marm Cafe</h1>
                 <p>ระบบจัดการข้อมูลร้าน (Admin Panel)</p>
             </div>
-
             <div class="login-box">
                 <h2>ลงชื่อเข้าใช้ (ผู้ดูแลระบบ)</h2>
-
                 <?php if ($error_msg != ''): ?>
                     <div class="error"><?php echo $error_msg; ?></div>
                 <?php endif; ?>
-
                 <form action="login_admin.php" method="POST">
                     <input type="text" name="username" class="form-control" placeholder="ชื่อแอดมิน" required>
                     <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
                     <button type="submit" class="btn-login">เข้าสู่ระบบหลังบ้าน</button>
                 </form>
-
                 <div class="divider">หรือ</div>
                 <a href="index1.php" class="back-link">กลับหน้าร้านค้า</a>
             </div>
-
         </div>
     </div>
-
     <?php include 'footer.php'; ?>
-
 </body>
 
 </html>
