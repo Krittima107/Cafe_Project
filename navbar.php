@@ -22,6 +22,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
     .navbar h2 {
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     .navbar a {
@@ -37,12 +40,25 @@ $current_page = basename($_SERVER['PHP_SELF']);
     .navbar a:hover {
         opacity: 0.8;
     }
+
+    /* เพิ่มคลาสสำหรับควบคุมขนาดโลโก้ */
+    .nav-logo-img {
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        background-color: white;
+        border-radius: 50%;
+        padding: 2px;
+    }
 </style>
 
 <div class="navbar">
     <a href="<?php echo $path; ?>index1.php" style="background: none; padding: 0; display: flex; align-items: center;">
         <h2 style="transition: opacity 0.3s; color: white;" onmouseover="this.style.opacity='0.8'"
-            onmouseout="this.style.opacity='1'">☕ Cafe Menu</h2>
+            onmouseout="this.style.opacity='1'">
+            <img src="<?php echo $path; ?>assets/logo.png" alt="Moom Marm Cafe Logo" class="nav-logo-img">
+            Moom Marm Cafe
+        </h2>
     </a>
 
     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">

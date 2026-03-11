@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <head>
     <meta charset="UTF-8">
-    <title>เข้าสู่ระบบ User | Cafe Menu</title>
+    <title>เข้าสู่ระบบ User | Moom Marm Cafe</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
         body {
@@ -45,45 +45,102 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            background-color: var(--color-cream);
             font-family: 'Prompt', sans-serif;
         }
 
-        .main-content {
+        /* สร้างพื้นหลังสีเต็มจอแบบ Shopee */
+        .login-wrapper {
             flex: 1;
+            background-color: var(--color-brown-light);
+            /* สีธีมคาเฟ่ */
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 40px 20px;
         }
 
-        .login-container {
+        /* กล่องครอบเลย์เอาต์ซ้าย-ขวา */
+        .login-split-container {
+            display: flex;
+            max-width: 1000px;
             width: 100%;
-            max-width: 400px;
-            padding: 30px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            flex-wrap: wrap;
+            /* ถ้าจอมือถือจะปัดลงมาเรียงแนวตั้ง */
         }
 
-        .login-container h2 {
+        /* ส่วนแบรนด์ (โลโก้ซ้ายมือ) */
+        .login-brand {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+            color: white;
+        }
+
+        .login-brand img {
+            width: 250px;
+            height: 250px;
+            object-fit: contain;
+            background-color: white;
+            /* พื้นหลังขาววงกลมให้โลโก้เด่น */
+            border-radius: 50%;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            margin-bottom: 25px;
+        }
+
+        .login-brand h1 {
+            margin: 0;
+            font-size: 36px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-brand p {
+            font-size: 18px;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        /* ส่วนกล่องล็อกอิน (ขวามือ) */
+        .login-box {
+            flex: 0 0 400px;
+            /* ล็อกขนาดกล่องขวา */
+            max-width: 100%;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+
+        .login-box h2 {
             color: var(--color-green);
             margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: left;
         }
 
         .form-control {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
-            border: 1px solid var(--color-brown-light);
+            border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-green);
         }
 
         .btn-login {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-top: 15px;
             background-color: var(--color-green);
             color: white;
@@ -91,15 +148,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
         }
 
         .btn-login:hover {
-            opacity: 0.9;
+            background-color: #3d8b40;
         }
 
         .error {
-            color: red;
+            color: #d9534f;
             margin-bottom: 15px;
+            background: #fdf2f2;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            border-left: 4px solid #d9534f;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .divider::before {
+            margin-right: .5em;
+        }
+
+        .divider::after {
+            margin-left: .5em;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--color-brown-dark);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -108,17 +209,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <?php include 'navbar.php'; ?>
 
-    <div class="main-content">
-        <div class="login-container">
-            <h2>☕ เข้าสู่ระบบ User ☕</h2>
-            <?php if ($error_msg != ''): ?>
-                <div class="error"><?php echo $error_msg; ?></div>
-            <?php endif; ?>
-            <form action="login_user.php" method="POST">
-                <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน" required>
-                <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
-                <button type="submit" class="btn-login">ล็อกอิน (User)</button>
-            </form>
+    <div class="login-wrapper">
+        <div class="login-split-container">
+
+            <div class="login-brand">
+                <img src="assets/logo.png" alt="Moom Marm Cafe">
+                <h1>Moom Marm Cafe</h1>
+                <p>มุมโปรดของคนรักกาแฟและเบเกอรี่</p>
+            </div>
+
+            <div class="login-box">
+                <h2>เข้าสู่ระบบ</h2>
+
+                <?php if ($error_msg != ''): ?>
+                    <div class="error"><?php echo $error_msg; ?></div>
+                <?php endif; ?>
+
+                <form action="login_user.php" method="POST">
+                    <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน (Username)"
+                        required>
+                    <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน (Password)"
+                        required>
+                    <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
+                </form>
+
+                <div class="divider">หรือ</div>
+                <a href="index1.php" class="back-link">กลับไปเลือกดูเมนูหน้าร้าน</a>
+            </div>
+
         </div>
     </div>
 
