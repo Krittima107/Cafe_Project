@@ -3,44 +3,43 @@ session_start();
 require_once 'config/db_connect.php';
 
 $error_msg = '';
-
-// รับค่าหน้าที่จะให้เด้งไปหลังจากล็อกอินสำเร็จ (ถ้าไม่มีให้กลับไปหน้าแรก)
-$redirect = $_GET['redirect'] ?? $_POST['redirect'] ?? 'index1.php';
+$success_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
+    $confirm_password = trim($_POST['confirm_password']);
 
-    if (!empty($username) && !empty($password)) {
-        // ดึงข้อมูลผู้ใช้จากฐานข้อมูล
-        $stmt = $conn->prepare("SELECT id, username, password, role FROM userscafe WHERE username = :username LIMIT 1");
-        $stmt->bindParam(':username', $username);
-        $stmt->execute();
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // ตรวจสอบว่าพบผู้ใช้และรหัสผ่านถูกต้องหรือไม่
-        if ($user && password_verify($password, $user['password'])) {
-
-            // สร้าง Session 
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role']; // เก็บสิทธิ์การใช้งาน (Role) ไว้ใน Session
-
-            // --- ส่วนที่ฉลาดที่สุด: แยกทางเดินอัตโนมัติ ---
-            if ($user['role'] === 'admin') {
-                // ถ้าเป็นแอดมิน ให้ส่งไปหน้า Dashboard
-                header("Location: admin/dashboard.php");
-            } else {
-                // ถ้าเป็นผู้ใช้ทั่วไป ให้ส่งไปหน้าตะกร้าสินค้า/หน้าแรก ตามที่กดมา
-                header("Location: " . $redirect);
-            }
-            exit; // จบการทำงานทันที
-
-        } else {
-            $error_msg = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!";
-        }
-    } else {
+    // 1. ตรวจสอบว่ากรอกข้อมูลครบไหม
+    if (empty($username) || empty($password) || empty($confirm_password)) {
         $error_msg = "กรุณากรอกข้อมูลให้ครบถ้วน";
+    }
+    // 2. ตรวจสอบว่ารหัสผ่านตรงกันไหม
+    elseif ($password !== $confirm_password) {
+        $error_msg = "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน!";
+    } else {
+        // 3. เช็คว่ามี Username นี้ในระบบหรือยัง
+        $stmt_check = $conn->prepare("SELECT id FROM userscafe WHERE username = :username LIMIT 1");
+        $stmt_check->bindParam(':username', $username);
+        $stmt_check->execute();
+
+        if ($stmt_check->rowCount() > 0) {
+            $error_msg = "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น!";
+        } else {
+            // 4. สมัครสมาชิกใหม่ (ค่าเริ่มต้นคือ role = 'user')
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+            try {
+                $stmt_insert = $conn->prepare("INSERT INTO userscafe (username, password, role) VALUES (:username, :password, 'user')");
+                $stmt_insert->execute([
+                    ':username' => $username,
+                    ':password' => $hashed_password
+                ]);
+                $success_msg = "สมัครสมาชิกสำเร็จ! คุณสามารถเข้าสู่ระบบได้เลย";
+            } catch (PDOException $e) {
+                $error_msg = "เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $e->getMessage();
+            }
+        }
     }
 }
 ?>
@@ -50,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <head>
     <meta charset="UTF-8">
-    <title>เข้าสู่ระบบ | Moom Marm Cafe</title>
+    <title>สมัครสมาชิก | Moom Marm Cafe</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
         body {
@@ -61,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-family: 'Prompt', sans-serif;
         }
 
+        /* พื้นหลังสีครีมเหลือง แบบเดียวกับหน้าล็อกอิน */
         .login-wrapper {
             flex: 1;
             background-color: #f5e6c8;
@@ -80,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             flex-wrap: wrap;
         }
 
+        /* ส่วนแบรนด์โลโก้ด้านซ้าย */
         .login-brand {
             flex: 1;
             min-width: 300px;
@@ -110,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             opacity: 1;
         }
 
+        /* กล่องฟอร์มด้านขวา */
         .login-box {
             flex: 0 0 400px;
             max-width: 100%;
@@ -120,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-sizing: border-box;
         }
 
-        /* ใช้สีเขียวผสมน้ำตาลเพื่อความเป็นกลาง */
         .login-box h2 {
             color: var(--color-brown-dark);
             margin-top: 0;
@@ -141,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .form-control:focus {
             outline: none;
-            border-color: var(--color-green);
+            border-color: var(--color-brown-dark);
         }
 
         .btn-login {
@@ -170,6 +171,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 4px;
             font-size: 14px;
             border-left: 4px solid #d9534f;
+        }
+
+        .success {
+            color: #4caf50;
+            margin-bottom: 15px;
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            border-left: 4px solid #4caf50;
         }
 
         .divider {
@@ -220,34 +231,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="login-brand">
                 <img src="assets/logo.png" alt="Moom Marm Cafe Logo">
                 <h1>Moom Marm Cafe</h1>
-                <p>เข้าสู่ระบบเพื่อใช้งาน</p>
+                <p>สมัครสมาชิกใหม่</p>
             </div>
 
             <div class="login-box">
-                <h2>ลงชื่อเข้าใช้</h2>
+                <h2>สร้างบัญชีผู้ใช้</h2>
 
                 <?php if ($error_msg != ''): ?>
-                    <div class="error"><?php echo $error_msg; ?></div>
+                    <div class="error">
+                        <?php echo $error_msg; ?>
+                    </div>
                 <?php endif; ?>
 
-                <form action="login.php" method="POST">
-                    <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
+                <?php if ($success_msg != ''): ?>
+                    <div class="success">
+                        <?php echo $success_msg; ?>
+                    </div>
+                    <a href="login.php" class="btn-login"
+                        style="display: block; text-align: center; text-decoration: none; background-color: var(--color-green);">ไปหน้าเข้าสู่ระบบ</a>
+                <?php else: ?>
 
-                    <input type="text" name="username" class="form-control" placeholder="ชื่อผู้ใช้งาน (Username)"
-                        required>
-                    <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน (Password)"
-                        required>
-                    <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
-                </form>
+                    <form action="register.php" method="POST">
+                        <input type="text" name="username" class="form-control" placeholder="ตั้งชื่อผู้ใช้งาน (Username)"
+                            required>
+                        <input type="password" name="password" class="form-control" placeholder="ตั้งรหัสผ่าน (Password)"
+                            required>
+                        <input type="password" name="confirm_password" class="form-control"
+                            placeholder="ยืนยันรหัสผ่านอีกครั้ง" required>
+
+                        <button type="submit" class="btn-login">ยืนยันการสมัครสมาชิก</button>
+                    </form>
+
+                <?php endif; ?>
 
                 <div class="divider">หรือ</div>
-
-                <a href="register.php"
-                    style="display: block; text-align: center; color: var(--color-green); font-weight: bold; text-decoration: none; margin-bottom: 15px; font-size: 16px;">
-                    ✨ สร้างบัญชีใหม่ (สมัครสมาชิก)
-                </a>
-
-                <a href="index1.php" class="back-link">กลับไปเลือกดูเมนูหน้าร้าน</a>
+                <a href="login.php" class="back-link">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
             </div>
         </div>
     </div>

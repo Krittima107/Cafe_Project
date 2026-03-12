@@ -3,13 +3,13 @@ session_start();
 require_once 'config/db_connect.php';
 
 /* ต้องล็อกอินก่อน */
-if(!isset($_SESSION['user_id'])){
+if (!isset($_SESSION['user_id'])) {
     header("Location: index1.php");
     exit;
 }
 
 /* ตรวจสอบว่ามีค่า id และ menu_id ส่งมาหรือไม่ */
-if(!isset($_GET['id']) || !isset($_GET['menu_id'])){
+if (!isset($_GET['id']) || !isset($_GET['menu_id'])) {
     header("Location: index1.php");
     exit;
 }

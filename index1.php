@@ -21,8 +21,10 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $filter_cat = isset($_GET['category']) ? $_GET['category'] : '';
 $filter_serve = isset($_GET['serve']) ? $_GET['serve'] : '';
 
-// --- สร้าง Query สำหรับดึงเมนู ---
-$sql = "SELECT m.*, c.name as category_name 
+// --- สร้าง Query สำหรับดึงเมนูทั้งหมด ---
+$sql = "SELECT m.*, c.name as category_name,
+               (SELECT IFNULL(AVG(rating), 0) FROM reviews WHERE menu_id = m.id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE menu_id = m.id) as total_reviews
         FROM menus m 
         LEFT JOIN categories c ON m.category_id = c.id 
         WHERE 1=1";
@@ -49,8 +51,17 @@ $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $cat_stmt = $conn->query("SELECT * FROM categories");
 $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงเมนูแนะนำยอดฮิต
-$rec_stmt = $conn->query("SELECT * FROM menus ORDER BY views DESC LIMIT 3");
+// =========================================================
+// ส่วนที่แก้ไข: ดึงเมนูยอดฮิต โดยเรียงจาก "คะแนนดาว" และ "จำนวนรีวิว"
+// =========================================================
+$rec_stmt = $conn->query("
+    SELECT m.*, 
+           (SELECT IFNULL(AVG(rating), 0) FROM reviews WHERE menu_id = m.id) as avg_rating,
+           (SELECT COUNT(*) FROM reviews WHERE menu_id = m.id) as total_reviews
+    FROM menus m 
+    ORDER BY avg_rating DESC, total_reviews DESC, m.views DESC 
+    LIMIT 3
+");
 $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -66,36 +77,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             margin: 0;
             padding: 0;
             font-family: 'Prompt', sans-serif;
-        }
-
-        .navbar {
-            background-color: var(--color-brown-light);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar h2 {
-            margin: 0;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 15px;
-            background-color: var(--color-brown-dark);
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .navbar a:hover {
-            opacity: 0.9;
+            background-color: var(--color-cream);
         }
 
         .container {
@@ -121,6 +103,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             width: 250px;
             border: 1px solid var(--color-brown-light);
             border-radius: 4px;
+            font-family: 'Prompt';
         }
 
         .btn-search {
@@ -130,6 +113,8 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-family: 'Prompt';
+            font-size: 15px;
         }
 
         .category-tags {
@@ -148,6 +133,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             text-decoration: none;
             border-radius: 20px;
             transition: 0.3s;
+            font-size: 14px;
         }
 
         .cat-tag:hover,
@@ -222,9 +208,10 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             border-left: 4px solid var(--color-brown-light);
             padding-left: 10px;
             margin-top: 30px;
+            color: var(--color-brown-dark);
         }
 
-        /* ====== เอฟเฟกต์สำหรับสินค้าหมด (Sold Out) ====== */
+        /* เอฟเฟกต์สำหรับสินค้าหมด (Sold Out) */
         .menu-card.out-of-stock {
             opacity: 0.75;
             cursor: default;
@@ -253,10 +240,25 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             z-index: 10;
         }
+
+        /* สไตล์สำหรับกล่องดาวในหน้าแรก */
+        .rating-box {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .star-icon {
+            color: #ffc107;
+            font-size: 16px;
+        }
     </style>
 </head>
 
-<body style="background-color: var(--color-cream);">
+<body>
 
     <?php include 'navbar.php'; ?>
 
@@ -268,23 +270,21 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
                 value="<?php echo htmlspecialchars($search); ?>">
             <button type="submit" class="btn-search">ค้นหา</button>
             <?php if ($search != '' || $filter_cat != '' || $filter_serve != ''): ?>
-                <a href="index1.php" style="color: red; text-decoration: none; margin-left: 10px;">ล้างการค้นหา</a>
+                <a href="index1.php" style="color: #d9534f; text-decoration: none; margin-left: 10px; font-size: 14px;">❌
+                    ล้างการค้นหา</a>
             <?php endif; ?>
         </form>
 
         <div class="category-tags">
             <a href="index1.php"
                 class="cat-tag <?php echo ($filter_cat == '' && $filter_serve == '') ? 'active' : ''; ?>">ทั้งหมด</a>
-
             <?php foreach ($categories as $cat): ?>
                 <a href="index1.php?category=<?php echo $cat['id']; ?>"
                     class="cat-tag <?php echo ($filter_cat == $cat['id']) ? 'active' : ''; ?>">
                     <?php echo $cat['name']; ?>
                 </a>
             <?php endforeach; ?>
-
             <span class="tag-divider">|</span>
-
             <a href="index1.php?serve=ร้อน" class="cat-tag <?php echo ($filter_serve == 'ร้อน') ? 'active' : ''; ?>">🔥
                 ร้อน</a>
             <a href="index1.php?serve=เย็น" class="cat-tag <?php echo ($filter_serve == 'เย็น') ? 'active' : ''; ?>">❄️
@@ -294,7 +294,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <?php if ($search == '' && $filter_cat == '' && $filter_serve == '' && count($recommended_menus) > 0): ?>
-            <h2 class="section-title">⭐ เมนูแนะนำยอดฮิต</h2>
+            <h2 class="section-title">⭐ เมนูยอดฮิต (คะแนนรีวิวสูงสุด)</h2>
             <div class="menu-grid" style="margin-bottom: 40px;">
                 <?php foreach ($recommended_menus as $menu): ?>
                     <a href="<?php echo $menu['is_available'] ? 'menu_detail.php?id=' . $menu['id'] : 'javascript:void(0);'; ?>"
@@ -303,9 +303,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                         <div class="img-container">
                             <?php if (!$menu['is_available']): ?>
-                                <div class="sold-out-badge">สินค้าหมด</div>
-                            <?php endif; ?>
-
+                                <div class="sold-out-badge">สินค้าหมด</div><?php endif; ?>
                             <?php if ($menu['image_name']): ?>
                                 <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
                             <?php else: ?>
@@ -316,10 +314,17 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                         <div class="menu-info">
                             <h3 class="menu-title"><?php echo $menu['name']; ?></h3>
+
+                            <div class="rating-box">
+                                <span class="star-icon">★</span>
+                                <strong style="color: #444;"><?php echo number_format($menu['avg_rating'], 1); ?></strong>
+                                <span>(<?php echo $menu['total_reviews']; ?> รีวิว)</span>
+                            </div>
+
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="menu-price"
-                                    style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>"><?php echo number_format($menu['price'], 2); ?>
-                                    ฿</span>
+                                <span class="menu-price" style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>">
+                                    <?php echo number_format($menu['price'], 2); ?> ฿
+                                </span>
                                 <span class="menu-serve">👁️ <?php echo $menu['views']; ?> วิว</span>
                             </div>
                         </div>
@@ -336,9 +341,7 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <div class="img-container">
                         <?php if (!$menu['is_available']): ?>
-                            <div class="sold-out-badge">สินค้าหมด</div>
-                        <?php endif; ?>
-
+                            <div class="sold-out-badge">สินค้าหมด</div><?php endif; ?>
                         <?php if ($menu['image_name']): ?>
                             <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="menu-img">
                         <?php else: ?>
@@ -352,11 +355,19 @@ $recommended_menus = $rec_stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div style="margin-bottom: 10px;">
                             <span class="menu-serve"><?php echo $menu['description']; ?></span>
                         </div>
+
+                        <div class="rating-box">
+                            <span class="star-icon">★</span>
+                            <strong style="color: #444;"><?php echo number_format($menu['avg_rating'], 1); ?></strong>
+                            <span>(<?php echo $menu['total_reviews']; ?> รีวิว)</span>
+                        </div>
+
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="menu-price"
-                                style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>"><?php echo number_format($menu['price'], 2); ?>
-                                ฿</span>
-                            <span style="font-size: 12px; color: #888;"><?php echo $menu['category_name']; ?></span>
+                            <span class="menu-price" style="<?php echo !$menu['is_available'] ? 'color: #999;' : ''; ?>">
+                                <?php echo number_format($menu['price'], 2); ?> ฿
+                            </span>
+                            <span
+                                style="font-size: 12px; color: #888;"><?php echo isset($menu['category_name']) ? $menu['category_name'] : ''; ?></span>
                         </div>
                     </div>
                 </a>

@@ -2,9 +2,9 @@
 session_start();
 require_once 'config/db_connect.php';
 
-if(!isset($_SESSION['user_id'])){
-header("Location:login.php");
-exit;
+if (!isset($_SESSION['user_id'])) {
+    header("Location:login.php");
+    exit;
 }
 
 $user_id = $_SESSION['user_id'];
@@ -18,11 +18,11 @@ VALUES (:menu_id,:user_id,:rating,:comment)
 ");
 
 $stmt->execute([
-':menu_id'=>$menu_id,
-':user_id'=>$user_id,
-':rating'=>$rating,
-':comment'=>$comment
+    ':menu_id' => $menu_id,
+    ':user_id' => $user_id,
+    ':rating' => $rating,
+    ':comment' => $comment
 ]);
 
-header("Location:menu_detail.php?id=".$menu_id);
+header("Location:menu_detail.php?id=" . $menu_id);
 exit;

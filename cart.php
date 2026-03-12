@@ -20,360 +20,395 @@ $cart = $_SESSION['cart'] ?? [];
 
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
 
-<meta charset="UTF-8">
-<title>ตะกร้าสินค้า</title>
+    <meta charset="UTF-8">
+    <title>ตะกร้าสินค้า</title>
 
-<link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css">
 
-<style>
+    <style>
+        .main-container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 40px 20px;
+        }
 
-.main-container{
-max-width:1000px;
-margin:auto;
-padding:40px 20px;
-}
+        .cart-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
 
-.cart-card{
-background:white;
-padding:30px;
-border-radius:12px;
-box-shadow:0 10px 20px rgba(0,0,0,0.05);
-}
+        .cart-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: var(--color-brown-dark);
+        }
 
-.cart-title{
-font-size:28px;
-margin-bottom:20px;
-color:var(--color-brown-dark);
-}
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-.cart-table{
-width:100%;
-border-collapse:collapse;
-}
+        .cart-table th {
+            background: var(--color-brown-light);
+            color: white;
+            padding: 12px;
+        }
 
-.cart-table th{
-background:var(--color-brown-light);
-color:white;
-padding:12px;
-}
+        .cart-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
 
-.cart-table td{
-padding:12px;
-border-bottom:1px solid #eee;
-text-align:center;
-}
+        .cart-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
 
-.cart-img{
-width:60px;
-height:60px;
-object-fit:cover;
-border-radius:6px;
-}
+        .type-badge {
+            background: #eee;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
 
-.type-badge{
-background:#eee;
-padding:4px 10px;
-border-radius:20px;
-font-size:13px;
-}
+        .qty-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
 
-.qty-box{
-display:flex;
-justify-content:center;
-align-items:center;
-gap:8px;
-}
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-.qty-btn{
-width:28px;
-height:28px;
-border:none;
-background:#ddd;
-border-radius:4px;
-cursor:pointer;
-font-weight:bold;
-}
+        .qty-btn:hover {
+            background: #ccc;
+        }
 
-.qty-btn:hover{
-background:#ccc;
-}
+        .qty-number {
+            min-width: 20px;
+        }
 
-.qty-number{
-min-width:20px;
-}
+        .remove-btn {
+            font-size: 20px;
+            text-decoration: none;
+        }
 
-.remove-btn{
-font-size:20px;
-text-decoration:none;
-}
+        .remove-btn:hover {
+            opacity: 0.7;
+        }
 
-.remove-btn:hover{
-opacity:0.7;
-}
+        .total-box {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--color-green);
+        }
 
-.total-box{
-margin-top:20px;
-text-align:right;
-font-size:22px;
-font-weight:bold;
-color:var(--color-green);
-}
+        .checkout-btn {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--color-brown-dark);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+        }
 
-.checkout-btn{
-margin-top:20px;
-display:inline-block;
-padding:12px 25px;
-background:var(--color-brown-dark);
-color:white;
-text-decoration:none;
-border-radius:6px;
-font-size:16px;
-transition:0.3s;
-border:none;
-cursor:pointer;
-}
+        .checkout-btn:hover {
+            opacity: 0.8;
+        }
 
-.checkout-btn:hover{
-opacity:0.8;
-}
+        .empty-cart {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
 
-.empty-cart{
-text-align:center;
-padding:40px;
-font-size:18px;
-}
+        .header-title {
+            color: var(--color-brown-dark);
+            border-bottom: 2px solid var(--color-cream);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-</style>
+        .btn-back {
+            padding: 8px 15px;
+            background: var(--color-brown-light);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover {
+            background: var(--color-brown-dark);
+        }
+    </style>
 
 </head>
 
 <body>
 
-<?php include 'navbar.php'; ?>
+    <?php include 'navbar.php'; ?>
 
-<div class="main-container">
+    <div class="main-container">
 
-<div class="cart-card">
+        <div class="cart-card">
 
-<div class="cart-title">🛒 ตะกร้าสินค้า</div>
+            <div class="header-title">
+                <h2 style="margin: 0;">🛒 ตะกร้าสินค้า</h2>
+                <a href="index1.php" class="btn-back">← กลับหน้าแรก</a>
+            </div>
+            <?php if (empty($cart)): ?>
 
-<?php if(empty($cart)): ?>
+                <div class="empty-cart">
+                    ยังไม่มีสินค้าในตะกร้า ☕
+                    <br><br>
+                    <a href="index1.php" class="checkout-btn">เลือกเมนู</a>
+                </div>
 
-<div class="empty-cart">
-ยังไม่มีสินค้าในตะกร้า ☕
-<br><br>
-<a href="index1.php" class="checkout-btn">เลือกเมนู</a>
-</div>
+            <?php else: ?>
 
-<?php else: ?>
+                <form action="checkout.php" method="post" id="cartForm">
 
-<form action="checkout.php" method="post" id="cartForm">
+                    <table class="cart-table">
 
-<table class="cart-table">
+                        <tr>
+                            <th>เลือก</th>
+                            <th>รูป</th>
+                            <th>เมนู</th>
+                            <th>ประเภท</th>
+                            <th>รูปแบบ</th>
+                            <th>ราคา</th>
+                            <th>จำนวน</th>
+                            <th>รวม</th>
+                            <th>ลบ</th>
+                        </tr>
 
-<tr>
-<th>เลือก</th>
-<th>รูป</th>
-<th>เมนู</th>
-<th>ประเภท</th>
-<th>รูปแบบ</th>
-<th>ราคา</th>
-<th>จำนวน</th>
-<th>รวม</th>
-<th>ลบ</th>
-</tr>
+                        <tbody>
 
-<tbody>
+                            <?php
 
-<?php
+                            foreach ($cart as $menu_id => $qty) {
 
-foreach($cart as $menu_id => $qty){
-
-$stmt = $conn->prepare("
+                                $stmt = $conn->prepare("
 SELECT menus.*, categories.name AS category_name
 FROM menus
 LEFT JOIN categories ON menus.category_id = categories.id
 WHERE menus.id=:id
 ");
 
-$stmt->execute([':id'=>$menu_id]);
-$menu = $stmt->fetch(PDO::FETCH_ASSOC);
+                                $stmt->execute([':id' => $menu_id]);
+                                $menu = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if(!$menu){ continue; }
+                                if (!$menu) {
+                                    continue;
+                                }
 
-$subtotal = $menu['price'] * $qty;
+                                $subtotal = $menu['price'] * $qty;
 
-?>
+                                ?>
 
-<tr data-price="<?php echo $menu['price']; ?>">
+                                <tr data-price="<?php echo $menu['price']; ?>">
 
-<td>
-<input type="checkbox" class="item-check" checked>
-</td>
+                                    <td>
+                                        <input type="checkbox" class="item-check" checked>
+                                    </td>
 
-<td>
+                                    <td>
 
-<?php if(!empty($menu['image_name'])): ?>
+                                        <?php if (!empty($menu['image_name'])): ?>
 
-<img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="cart-img">
+                                            <img src="uploads/menus/<?php echo $menu['image_name']; ?>" class="cart-img">
 
-<?php else: ?>
+                                        <?php else: ?>
 
-<div style="width:60px;height:60px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;">
-☕
-</div>
+                                            <div
+                                                style="width:60px;height:60px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+                                                ☕
+                                            </div>
 
-<?php endif; ?>
+                                        <?php endif; ?>
 
-</td>
+                                    </td>
 
-<td><?php echo htmlspecialchars($menu['name']); ?></td>
+                                    <td>
+                                        <?php echo htmlspecialchars($menu['name']); ?>
+                                    </td>
 
-<td><?php echo htmlspecialchars($menu['category_name']); ?></td>
+                                    <td>
+                                        <?php echo htmlspecialchars($menu['category_name']); ?>
+                                    </td>
 
-<td>
-<span class="type-badge">
-<?php echo htmlspecialchars($menu['description']); ?>
-</span>
-</td>
+                                    <td>
+                                        <span class="type-badge">
+                                            <?php echo htmlspecialchars($menu['description']); ?>
+                                        </span>
+                                    </td>
 
-<td class="price">
-<?php echo number_format($menu['price'],2); ?>
-</td>
+                                    <td class="price">
+                                        <?php echo number_format($menu['price'], 2); ?>
+                                    </td>
 
-<td>
+                                    <td>
 
-<div class="qty-box">
+                                        <div class="qty-box">
 
-<button type="button" class="qty-btn minus">-</button>
+                                            <button type="button" class="qty-btn minus">-</button>
 
-<span class="qty-number"><?php echo $qty; ?></span>
+                                            <span class="qty-number">
+                                                <?php echo $qty; ?>
+                                            </span>
 
-<button type="button" class="qty-btn plus">+</button>
+                                            <button type="button" class="qty-btn plus">+</button>
 
-</div>
+                                        </div>
 
-</td>
+                                    </td>
 
-<td class="subtotal">
-<?php echo number_format($subtotal,2); ?>
-</td>
+                                    <td class="subtotal">
+                                        <?php echo number_format($subtotal, 2); ?>
+                                    </td>
 
-<td>
-<a href="remove_cart.php?id=<?php echo $menu_id; ?>" class="remove-btn">
-🗑️
-</a>
-</td>
+                                    <td>
+                                        <a href="remove_cart.php?id=<?php echo $menu_id; ?>" class="remove-btn">
+                                            🗑️
+                                        </a>
+                                    </td>
 
-</tr>
+                                </tr>
 
-<?php } ?>
+                            <?php } ?>
 
-</tbody>
+                        </tbody>
 
-</table>
+                    </table>
 
-<div class="total-box">
-รวมทั้งหมด : <span id="totalPrice">0.00</span> ฿
-</div>
+                    <div class="total-box">
+                        รวมทั้งหมด : <span id="totalPrice">0.00</span> ฿
+                    </div>
 
-<br>
+                    <br>
 
-<button type="submit" class="checkout-btn">
-✅ สั่งซื้อสินค้า
-</button>
+                    <button type="submit" class="checkout-btn">
+                        ✅ สั่งซื้อสินค้า
+                    </button>
 
-</form>
+                </form>
 
-<?php endif; ?>
+            <?php endif; ?>
 
-</div>
-</div>
+        </div>
+    </div>
 
-<script>
+    <script>
 
-function calculateTotal(){
+        function calculateTotal() {
 
-let total = 0;
+            let total = 0;
 
-document.querySelectorAll("tbody tr").forEach(row=>{
+            document.querySelectorAll("tbody tr").forEach(row => {
 
-let checkbox = row.querySelector(".item-check");
+                let checkbox = row.querySelector(".item-check");
 
-if(checkbox && checkbox.checked){
+                if (checkbox && checkbox.checked) {
 
-let subtotal = parseFloat(row.querySelector(".subtotal").innerText);
+                    let subtotal = parseFloat(row.querySelector(".subtotal").innerText);
 
-if(!isNaN(subtotal)){
-total += subtotal;
-}
+                    if (!isNaN(subtotal)) {
+                        total += subtotal;
+                    }
 
-}
+                }
 
-});
+            });
 
-document.getElementById("totalPrice").innerText = total.toFixed(2);
+            document.getElementById("totalPrice").innerText = total.toFixed(2);
 
-}
+        }
 
-function updateSubtotal(row){
+        function updateSubtotal(row) {
 
-let price = parseFloat(row.dataset.price);
-let qty = parseInt(row.querySelector(".qty-number").innerText);
+            let price = parseFloat(row.dataset.price);
+            let qty = parseInt(row.querySelector(".qty-number").innerText);
 
-let subtotal = price * qty;
+            let subtotal = price * qty;
 
-row.querySelector(".subtotal").innerText = subtotal.toFixed(2);
+            row.querySelector(".subtotal").innerText = subtotal.toFixed(2);
 
-}
+        }
 
-document.querySelectorAll(".plus").forEach(btn=>{
+        document.querySelectorAll(".plus").forEach(btn => {
 
-btn.addEventListener("click",function(){
+            btn.addEventListener("click", function () {
 
-let row = this.closest("tr");
-let qtyEl = row.querySelector(".qty-number");
+                let row = this.closest("tr");
+                let qtyEl = row.querySelector(".qty-number");
 
-qtyEl.innerText = parseInt(qtyEl.innerText) + 1;
+                qtyEl.innerText = parseInt(qtyEl.innerText) + 1;
 
-updateSubtotal(row);
-calculateTotal();
+                updateSubtotal(row);
+                calculateTotal();
 
-});
+            });
 
-});
+        });
 
-document.querySelectorAll(".minus").forEach(btn=>{
+        document.querySelectorAll(".minus").forEach(btn => {
 
-btn.addEventListener("click",function(){
+            btn.addEventListener("click", function () {
 
-let row = this.closest("tr");
-let qtyEl = row.querySelector(".qty-number");
+                let row = this.closest("tr");
+                let qtyEl = row.querySelector(".qty-number");
 
-let qty = parseInt(qtyEl.innerText);
+                let qty = parseInt(qtyEl.innerText);
 
-if(qty > 1){
+                if (qty > 1) {
 
-qtyEl.innerText = qty - 1;
+                    qtyEl.innerText = qty - 1;
 
-updateSubtotal(row);
-calculateTotal();
+                    updateSubtotal(row);
+                    calculateTotal();
 
-}
+                }
 
-});
+            });
 
-});
+        });
 
-document.querySelectorAll(".item-check").forEach(cb=>{
-cb.addEventListener("change",calculateTotal);
-});
+        document.querySelectorAll(".item-check").forEach(cb => {
+            cb.addEventListener("change", calculateTotal);
+        });
 
-calculateTotal();
+        calculateTotal();
 
-</script>
+    </script>
 
 </body>
+
 </html>
